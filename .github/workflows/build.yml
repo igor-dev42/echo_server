@@ -35,9 +35,18 @@ jobs:
         make -j$(nproc)
     
     - name: Run tests
+      timeout-minutes: 5
       run: |
         cd build
-        ./run_tests
+        # Run tests with timeout wrapper
+        timeout 60s ./run_tests || {
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 124 ]; then
+            echo "ERROR: Tests timed out after 60 seconds"
+            exit 1
+          fi
+          exit $EXIT_CODE
+        }
     
     - name: Build server
       run: |
@@ -57,7 +66,14 @@ jobs:
           echo "Server started successfully"
           # Stopping the server
           kill -INT $SERVER_PID
-          sleep 1
+          sleep 2
+          # Verify it stopped
+          if ps -p $SERVER_PID > /dev/null; then
+            echo "ERROR: Server didn't stop after SIGINT"
+            kill -9 $SERVER_PID
+            exit 1
+          fi
+          echo "Server stopped successfully"
         else
           echo "Server failed to start"
           exit 1
