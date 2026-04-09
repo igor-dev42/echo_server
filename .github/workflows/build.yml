@@ -1,0 +1,66 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libboost-all-dev cmake build-essential
+    
+    - name: Configure CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake .. -DCMAKE_CXX_STANDARD=17
+    
+    - name: Build
+      run: |
+        cd build
+        make -j$(nproc)
+    
+    - name: Run tests
+      run: |
+        cd build
+        ./run_tests
+    
+    - name: Build server
+      run: |
+        cd build
+        make echo_server
+    
+    - name: Quick smoke test (server starts and stops)
+      run: |
+        cd build
+        # Starting the server in the background
+        ./echo_server 9999 &
+        SERVER_PID=$!
+        # Giving time to start
+        sleep 2
+        # Checking that the server is working
+        if ps -p $SERVER_PID > /dev/null; then
+          echo "Server started successfully"
+          # Stopping the server
+          kill -INT $SERVER_PID
+          sleep 1
+        else
+          echo "Server failed to start"
+          exit 1
+        fi
+    
+    - name: Upload artifacts (if needed)
+      uses: actions/upload-artifact@v4
+      with:
+        name: echo_server
+        path: build/echo_server
