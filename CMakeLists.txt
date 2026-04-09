@@ -3,20 +3,35 @@ project(EchoServer VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
-#Boost
+# ============================================
+# DEPENDENCIES
+# ============================================
 find_package(Boost REQUIRED COMPONENTS system)
 
-add_executable(echo_server 
-    src/main.cpp 
-    src/server.cpp 
+# ============================================
+# STATIC LIBRARY (shared logic)
+# ============================================
+set(LIBRARY_SOURCES
+    src/server.cpp
     src/thread_pool.cpp
 )
 
-target_include_directories(echo_server PRIVATE ${Boost_INCLUDE_DIRS} src)
-target_link_libraries(echo_server ${Boost_LIBRARIES} pthread)
+add_library(echo_lib STATIC ${LIBRARY_SOURCES})
 
-# Google Test
+target_include_directories(echo_lib PRIVATE ${Boost_INCLUDE_DIRS} src)
+target_link_libraries(echo_lib ${Boost_LIBRARIES} pthread)
+
+# ============================================
+# MAIN SERVER EXECUTABLE
+# ============================================
+add_executable(echo_server src/main.cpp)
+target_link_libraries(echo_server echo_lib)
+
+# ============================================
+# UNIT TESTS (Google Test)
+# ============================================
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -24,10 +39,44 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-# Tests
-enable_testing()
 add_executable(run_tests tests/test_main.cpp)
-target_link_libraries(run_tests gtest_main gtest pthread)
+target_link_libraries(run_tests 
+    echo_lib
+    gtest_main 
+    gtest 
+    ${Boost_LIBRARIES} 
+    pthread
+)
+
 target_include_directories(run_tests PRIVATE src)
 
+enable_testing()
 add_test(NAME EchoServerTests COMMAND run_tests)
+
+# ============================================
+# ADDITIONAL TARGETS
+# ============================================
+# Convenient test runner (make check)
+add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    DEPENDS run_tests
+    COMMENT "Running unit tests..."
+)
+
+# Convenient full clean (make clean_all)
+add_custom_target(clean_all
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
+    COMMENT "Removing entire build directory..."
+)
+
+# Build configuration info
+message(STATUS "========================================")
+message(STATUS "EchoServer Configuration:")
+message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "  Boost version: ${Boost_VERSION}")
+message(STATUS "========================================")
+message(STATUS "  Build server: make echo_server")
+message(STATUS "  Run tests: make check")
+message(STATUS "  Clean all: make clean_all")
+message(STATUS "========================================")

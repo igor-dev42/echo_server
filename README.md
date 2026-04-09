@@ -56,17 +56,17 @@ telnet localhost 8080
 ```
 
 ## Architecture
-
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+```
+┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
 │   main()    │────▶│ io_context   │────▶│  async_accept   │
-│  (signals)  │     │   (thread)   │     │   (callback)    │
-└─────────────┘     └──────────────┘     └────────┬────────┘
+│  (signals)  │      │   (thread)   │      │   (callback)    │
+└─────────────┘      └──────────────┘      └────────┬────────┘
                                                     │
                                                     ▼
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
 │  Thread     │◀────│   Task       │◀────│  thread_pool    │
-│  Pool       │     │   Queue      │     │  .enqueue()     │
-└────────┬────┘     └──────────────┘     └─────────────────┘
+│  Pool       │      │   Queue      │      │  .enqueue()     │
+└────────┬────┘      └──────────────┘      └─────────────────┘
          │
          ▼
 ┌─────────────────────────────────────────┐
@@ -75,7 +75,7 @@ telnet localhost 8080
 │  - write()                              │
 │  - echo back                            │
 └─────────────────────────────────────────┘
-
+```
 ## API
 This is a raw TCP echo server (no HTTP). Connect via any TCP client:
 
@@ -92,7 +92,7 @@ With 4 worker threads on modern hardware:
 ~50,000 echo requests/second
 
 ## Project Structure
-
+```
 echo_server/
 ├── src/
 │   ├── main.cpp           # Entry point, signal handling
@@ -104,7 +104,7 @@ echo_server/
 ├── .github/workflows/
 │   └── build.yml          # CI pipeline
 └── README.md
-
+```
 ## License
 MIT License - feel free to use for learning and portfolios.
 
@@ -113,7 +113,9 @@ MIT License - feel free to use for learning and portfolios.
 **Igor** — C++ Developer
 
 [![GitHub](https://img.shields.io/badge/GitHub-igor--dev42-181717?style=flat-square&logo=github)](https://github.com/igor-dev42)
+
 [![Email](https://img.shields.io/badge/Email-igor.dev42%40gmail.com-D14836?style=flat-square&logo=gmail&logoColor=white)](mailto:igor.dev42@gmail.com)
+
 [![Telegram](https://img.shields.io/badge/Telegram-@igor__dev42-2AABEE?style=flat-square&logo=telegram&logoColor=white)](https://t.me/igor_dev42)
 
 ## References
