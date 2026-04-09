@@ -3,7 +3,7 @@
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://isocpp.org/)
 [![Boost](https://img.shields.io/badge/Boost-1.83-green.svg)](https://www.boost.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.14+-red.svg)](https://cmake.org/)
-[![CI](https://github.com/igor-dev42/echo_server/actions/workflows/build.yml/badge.svg)](https://github.com/igor-dev42/echo_server/actions/workflows/build.yml)
+[![CI Build and Test](https://github.com/igor-dev42/echo_server/actions/workflows/build.yml/badge.svg)](https://github.com/igor-dev42/echo_server/actions/workflows/build.yml)
 
 Production-ready TCP echo server demonstrating modern C++17 practices, multithreading, and asynchronous networking.
 
