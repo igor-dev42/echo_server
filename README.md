@@ -17,6 +17,10 @@ Production-ready TCP echo server demonstrating modern C++17 practices, multithre
 - 🧪 **Unit tests** with Google Test
 - 🔄 **CI/CD** with GitHub Actions
 
+## API
+
+This is a raw TCP echo server (no HTTP). Connect via any TCP client (netcat, telnet, etc.).
+
 ## Requirements
 
 - C++17 compiler (g++ 7+, clang 5+, MSVC 2017+)
@@ -36,18 +40,37 @@ cmake ..
 make
 ```
 
-## Run Server
+## Test with netcat (nc)
+
+**Step 1:** Start the server in one terminal:
 
 ```bash
-./echo_server 8080
+./echo_server
+# Output: Server listening on port 8080
 ```
 
-## Test with telnet
+**Step 2:** Open another terminal and connect with netcat:
 
 ```bash
-telnet localhost 8080
-# Type any message, press Enter, get it back
+nc localhost 8080
 ```
+
+**Note:** Use the same port number as the server running on (the default is 8080). If you run the server on a different port
+(e.g. ./echo_server 8081), update the client command accordingly (nc localhost 8081).
+
+**Step 3:** Type any message and press Enter:
+
+```text
+Hello
+# Server responds: Hello
+World
+# Server responds: World
+```
+
+**Step 4:** Exit:
+
+- Press `Ctrl+C` in the nc terminal
+- Then press `Ctrl+C` in the server terminal to stop the server (if needed)
 
 ## Run Unit Tests
 
@@ -58,13 +81,13 @@ telnet localhost 8080
 ## Architecture
 ```
 ┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
-│   main()    │────▶│ io_context   │────▶│  async_accept   │
+│   main()    │────▶ │ io_context   │────▶ │  async_accept   │
 │  (signals)  │      │   (thread)   │      │   (callback)    │
 └─────────────┘      └──────────────┘      └────────┬────────┘
                                                     │
                                                     ▼
 ┌─────────────┐      ┌──────────────┐      ┌─────────────────┐
-│  Thread     │◀────│   Task       │◀────│  thread_pool    │
+│  Thread     │◀──── │   Task       │◀──── │  thread_pool    │
 │  Pool       │      │   Queue      │      │  .enqueue()     │
 └────────┬────┘      └──────────────┘      └─────────────────┘
          │
@@ -75,14 +98,6 @@ telnet localhost 8080
 │  - write()                              │
 │  - echo back                            │
 └─────────────────────────────────────────┘
-```
-## API
-This is a raw TCP echo server (no HTTP). Connect via any TCP client:
-
-```bash
-# Echo any message
-echo "Hello" | nc localhost 8080
-# Output: Hello
 ```
 
 ## Performance
@@ -105,6 +120,7 @@ echo_server/
 │   └── build.yml          # CI pipeline
 └── README.md
 ```
+
 ## License
 MIT License - feel free to use for learning and portfolios.
 

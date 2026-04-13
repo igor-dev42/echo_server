@@ -100,11 +100,11 @@ TEST(ServerTest, EchoesMessage) {
     
     const std::string test_message = "Hello, Echo Server!";
     
-    // Send with timeout
+    // Send
     boost::asio::write(client_socket, boost::asio::buffer(test_message), ec);
     ASSERT_FALSE(ec);
     
-    // Read with timeout
+    // Read
     char buffer[1024];
     size_t len = client_socket.read_some(boost::asio::buffer(buffer), ec);
     ASSERT_FALSE(ec);
@@ -175,6 +175,95 @@ TEST(ServerTest, StopsWithActiveConnections) {
     
     // If we get here, the server stopped without crashing
     SUCCEED();
+}
+
+// ============================================================
+// Test 6: Server handles multiple clients simultaneously
+// ============================================================
+TEST(ServerTest, HandlesMultipleClientsSimultaneously) {
+    boost::asio::io_context io_context;
+    const uint16_t test_port = 18082;
+    
+    EchoServer server(io_context, test_port, 4);  // 4 worker threads
+    server.start();
+    
+    std::thread io_thread([&io_context]() {
+        io_context.run();
+    });
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    
+    const int num_clients = 10;
+    const std::string test_message = "Hello from client ";
+    std::atomic<int> success_count = 0;
+    std::atomic<int> failure_count = 0;
+    std::vector<std::thread> client_threads;
+    
+    // Create multiple clients in parallel
+    for (int i = 0; i < num_clients; ++i) {
+        client_threads.emplace_back([&, i]() {
+            boost::asio::io_context client_io;
+            boost::asio::ip::tcp::socket client_socket(client_io);
+            boost::system::error_code ec;
+            
+            // Connect to server
+            client_socket.connect(
+                boost::asio::ip::tcp::endpoint(
+                    boost::asio::ip::make_address("127.0.0.1"), 
+                    test_port
+                ),
+                ec
+            );
+            
+            if (ec) {
+                failure_count++;
+                return;
+            }
+            
+            std::string msg = test_message + std::to_string(i);
+            
+            // Send message
+            boost::asio::write(client_socket, boost::asio::buffer(msg), ec);
+            if (ec) {
+                failure_count++;
+                return;
+            }
+            
+            // Read response
+            char buffer[1024];
+            size_t len = client_socket.read_some(boost::asio::buffer(buffer), ec);
+            if (ec) {
+                failure_count++;
+                return;
+            }
+            
+            std::string response(buffer, len);
+            if (response == msg) {
+                success_count++;
+            } else {
+                failure_count++;
+            }
+            
+            client_socket.close();
+        });
+    }
+    
+    // Wait for all client threads to complete
+    for (auto& t : client_threads) {
+        t.join();
+    }
+    
+    // Stop the server
+    server.stop();
+    io_context.stop();
+    if (io_thread.joinable()) {
+        io_thread.join();
+    }
+    
+    // Verify results
+    EXPECT_EQ(success_count, num_clients);
+    EXPECT_EQ(failure_count, 0);
+    std::cout << "Successful connections: " << success_count << " / " << num_clients << std::endl;
 }
 
 int main(int argc, char** argv) {
